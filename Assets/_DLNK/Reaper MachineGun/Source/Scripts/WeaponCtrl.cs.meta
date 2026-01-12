@@ -1,0 +1,17 @@
+fileFormatVersion: 2
+guid: 2ecc3670169d74193b089864581f35b3
+MonoImporter:
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 7890
+  packageName: Submachine Gun Reaper
+  packageVersion: 1.6.3
+  assetPath: Assets/_DLNK/Reaper MachineGun/Source/Scripts/WeaponCtrl.cs
+  uploadId: 352588

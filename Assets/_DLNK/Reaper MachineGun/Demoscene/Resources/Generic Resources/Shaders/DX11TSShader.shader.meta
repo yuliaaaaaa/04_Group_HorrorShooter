@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 04e6adbf1ea9849459d705cc179c5fa5
+ShaderImporter:
+  defaultTextures: []
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 7890
+  packageName: Submachine Gun Reaper
+  packageVersion: 1.6.3
+  assetPath: Assets/_DLNK/Reaper MachineGun/Demoscene/Resources/Generic Resources/Shaders/DX11TSShader.shader
+  uploadId: 352588

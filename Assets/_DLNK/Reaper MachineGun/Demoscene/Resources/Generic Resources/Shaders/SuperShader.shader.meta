@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 007389d77f22f3944a6bc74bbc60e182
+ShaderImporter:
+  defaultTextures: []
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 7890
+  packageName: Submachine Gun Reaper
+  packageVersion: 1.6.3
+  assetPath: Assets/_DLNK/Reaper MachineGun/Demoscene/Resources/Generic Resources/Shaders/SuperShader.shader
+  uploadId: 352588

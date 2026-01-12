@@ -1,0 +1,17 @@
+fileFormatVersion: 2
+guid: 3f8f32a1c25237849b3e337bd89f3da4
+MonoImporter:
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 7890
+  packageName: Submachine Gun Reaper
+  packageVersion: 1.6.3
+  assetPath: Assets/_DLNK/Reaper MachineGun/Demoscene/Scripts/demo.cs
+  uploadId: 352588

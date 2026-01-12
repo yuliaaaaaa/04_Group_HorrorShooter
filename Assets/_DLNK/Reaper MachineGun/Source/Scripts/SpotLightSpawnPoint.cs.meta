@@ -1,0 +1,17 @@
+fileFormatVersion: 2
+guid: 8728f45da5927498a83f314cfc175fc0
+MonoImporter:
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 7890
+  packageName: Submachine Gun Reaper
+  packageVersion: 1.6.3
+  assetPath: Assets/_DLNK/Reaper MachineGun/Source/Scripts/SpotLightSpawnPoint.cs
+  uploadId: 352588

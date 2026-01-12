@@ -1,0 +1,17 @@
+fileFormatVersion: 2
+guid: 2d7d9e3ab1e5b445e831569e62b687eb
+MonoImporter:
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 7890
+  packageName: Submachine Gun Reaper
+  packageVersion: 1.6.3
+  assetPath: Assets/_DLNK/Reaper MachineGun/Source/Scripts/BulletCartridge.cs
+  uploadId: 352588
