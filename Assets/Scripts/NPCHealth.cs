@@ -28,6 +28,7 @@ public class NPCHealth : MonoBehaviour, IDamageable
 
     public void TakeDamage(int damage)
     {
+        Debug.Log("TakeDamage, current HP " + _hp );
         if(_isDead) return;
         _hp -= damage;
 
