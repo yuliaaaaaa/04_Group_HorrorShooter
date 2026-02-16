@@ -41,8 +41,9 @@ public class NPCHealth : MonoBehaviour, IDamageable
 
     private void Die()
     {
+        _animator.applyRootMotion = true;
         _isDead = true;
-
+        
         if (_agent != null)
         {
             _agent.isStopped = true;
@@ -51,7 +52,7 @@ public class NPCHealth : MonoBehaviour, IDamageable
 
         _animator.SetTrigger("Die");
         OnDied?.Invoke();
-        Destroy(this.gameObject);
+        Destroy(this.gameObject, 4f);
     }
 }
 

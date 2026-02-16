@@ -4,20 +4,20 @@ using UnityEngine.AI;
 public class NPCControllerAI : MonoBehaviour
 {
     private enum State { Idle, Patrol, Chase, Attack, Death }
-    
+
     [SerializeField] private Transform player;
-    
+
     [SerializeField] private Transform[] patrolPoints;
     [SerializeField] private float waitOnPoint = 1.5f;
-    
+
     [SerializeField] private float detectDistance = 8f;
     [SerializeField] private float loseDistanceMultiplier = 1.5f;
     [SerializeField] private float attackEnterDistance = 1.5f;
     [SerializeField] private float attackExitDistance = 2.5f;
-    
+
     [SerializeField] private float walkSpeed = 5f;
     [SerializeField] private float runSpeed = 8f;
-    
+
     [SerializeField] private int damage = 10;
     [SerializeField] private float attackCooldown = 1.5f;
 
@@ -29,6 +29,8 @@ public class NPCControllerAI : MonoBehaviour
     private int _patrolIndex;
     private float _waitTimer;
     private float _nextAttackTime;
+
+    private bool _hordeMode = false;
 
     private void Awake()
     {
@@ -63,6 +65,11 @@ public class NPCControllerAI : MonoBehaviour
         if (_health != null && _health.IsDead) return;
         if (player == null) return;
 
+        if (!_hordeMode && GameTimer.Instance != null && GameTimer.Instance.IsHordeActive)
+        {
+            ActivateHordeMode();
+        }
+
         float dist = Vector3.Distance(transform.position, player.position);
         float loseDist = detectDistance * loseDistanceMultiplier;
 
@@ -81,10 +88,30 @@ public class NPCControllerAI : MonoBehaviour
                 UpdateAttack(dist);
                 break;
         }
+
+        UpdateAnimator();
     }
-    
+
+    public void ActivateHordeMode()
+    {
+        if (_hordeMode) return;
+
+        _hordeMode = true;
+        Debug.Log($"{gameObject.name} увійшов в режим орди!");
+        if (_state != State.Attack && _state != State.Death)
+        {
+            ChangeState(State.Chase);
+        }
+    }
+
     private void UpdateIdle(float dist)
     {
+        if (_hordeMode)
+        {
+            ChangeState(State.Chase);
+            return;
+        }
+
         if (dist <= detectDistance)
         {
             ChangeState(State.Chase);
@@ -99,6 +126,12 @@ public class NPCControllerAI : MonoBehaviour
 
     private void UpdatePatrol(float dist)
     {
+        if (_hordeMode)
+        {
+            ChangeState(State.Chase);
+            return;
+        }
+
         if (dist <= detectDistance)
         {
             ChangeState(State.Chase);
@@ -110,28 +143,22 @@ public class NPCControllerAI : MonoBehaviour
             ChangeState(State.Idle);
             return;
         }
-        
+
         if (!_agent.pathPending && _agent.remainingDistance <= _agent.stoppingDistance + 0.1f)
         {
             _waitTimer += Time.deltaTime;
-            SetIdle();
 
             if (_waitTimer >= waitOnPoint)
             {
                 _waitTimer = 0f;
                 GoToNextPatrolPoint();
-                SetWalk();
             }
-        }
-        else
-        {
-            SetWalk();
         }
     }
 
     private void UpdateChase(float dist, float loseDist)
     {
-        if (dist > loseDist)
+        if (!_hordeMode && dist > loseDist)
         {
             ChangeState(State.Patrol);
             return;
@@ -143,11 +170,10 @@ public class NPCControllerAI : MonoBehaviour
             return;
         }
 
-        _agent.isStopped = false;
-        _agent.speed = runSpeed;
-        _agent.SetDestination(player.position);
+        if (_agent == null || !_agent.enabled || !_agent.isOnNavMesh) return;
 
-        SetRun();
+        _agent.isStopped = false;
+        _agent.SetDestination(player.position);
     }
 
     private void UpdateAttack(float dist)
@@ -157,9 +183,13 @@ public class NPCControllerAI : MonoBehaviour
             ChangeState(State.Chase);
             return;
         }
-        
+
+        if (_agent != null && _agent.enabled && _agent.isOnNavMesh)
+        {
+            _agent.isStopped = true;
+        }
+
         FaceTarget(player.position);
-        SetIdle();
 
         if (Time.time >= _nextAttackTime)
         {
@@ -168,21 +198,65 @@ public class NPCControllerAI : MonoBehaviour
             if (_animator != null)
                 _animator.SetTrigger("Attack");
 
-            IDamageable dmg = player.GetComponent<IDamageable>();
-            if (dmg != null)
+            PlayerHealth playerHealth = player.GetComponent<PlayerHealth>();
+            if (playerHealth != null)
             {
-               //dmg.TakeDamage(damage);
+                playerHealth.TakeDamage(damage);
             }
-            PlayerHealth curHealth = player.GetComponent<PlayerHealth>();
-            curHealth.TakeDamage(damage);
-               
         }
     }
-    
+
+    private void UpdateAnimator()
+    {
+        if (_animator == null) return;
+
+        float targetSpeed = 0f;
+
+        switch (_state)
+        {
+            case State.Idle:
+                targetSpeed = 0f;
+                break;
+
+            case State.Patrol:
+                if (_agent != null && _agent.enabled && _agent.isOnNavMesh)
+                {
+                    if (_agent.velocity.sqrMagnitude > 0.1f)
+                        targetSpeed = 0.5f;
+                    else
+                        targetSpeed = 0f;
+                }
+                break;
+
+            case State.Chase:
+                if (_agent != null && _agent.enabled && _agent.isOnNavMesh)
+                {
+                    if (_agent.velocity.sqrMagnitude > 0.1f)
+                        targetSpeed = 1f;
+                    else
+                        targetSpeed = 0f;
+                }
+                break;
+
+            case State.Attack:
+                targetSpeed = 0f;
+                break;
+
+            case State.Death:
+                targetSpeed = 0f;
+                break;
+        }
+
+        float currentSpeed = _animator.GetFloat("MoveSpeed");
+        float smoothSpeed = Mathf.Lerp(currentSpeed, targetSpeed, Time.deltaTime * 10f);
+        _animator.SetFloat("MoveSpeed", smoothSpeed);
+    }
 
     private void ChangeState(State newState)
     {
         if (_state == newState) return;
+
+        ExitState(_state);
         _state = newState;
 
         switch (_state)
@@ -209,10 +283,23 @@ public class NPCControllerAI : MonoBehaviour
         }
     }
 
+    private void ExitState(State oldState)
+    {
+        switch (oldState)
+        {
+            case State.Attack:
+                if (_agent != null && _agent.enabled && _agent.isOnNavMesh)
+                {
+                    _agent.updateRotation = true;
+                    _agent.isStopped = false;
+                }
+                break;
+        }
+    }
+
     private void EnterIdle()
     {
         StopAndSnapAgent();
-        SetIdle();
     }
 
     private void EnterPatrol()
@@ -223,56 +310,62 @@ public class NPCControllerAI : MonoBehaviour
             return;
         }
 
-        _agent.updateRotation = true;
+        if (_agent == null || !_agent.enabled || !_agent.isOnNavMesh) return;
+
         _agent.isStopped = false;
+        _agent.updateRotation = true;
         _agent.speed = walkSpeed;
 
-        _waitTimer = 0f;
-        
         _agent.ResetPath();
+
+        _waitTimer = 0f;
         _patrolIndex = GetClosestPatrolIndex();
         GoToPatrolPoint();
-
-        SetWalk();
     }
 
     private void EnterChase()
     {
-        _agent.updateRotation = true;
-        _agent.isStopped = false;
-        _agent.speed = runSpeed;
-        
-        _agent.ResetPath();
+        if (_agent == null || !_agent.enabled || !_agent.isOnNavMesh)
+        {
+            Debug.LogError("Cannot enter Chase - agent is not valid!");
+            return;
+        }
 
-        SetRun();
+        _agent.isStopped = false;
+        _agent.updateRotation = true;
+        _agent.speed = runSpeed;
+
+        _agent.ResetPath();
     }
 
     private void EnterAttack()
     {
+        if (_agent == null || !_agent.enabled || !_agent.isOnNavMesh) return;
+
+        _agent.isStopped = true;
         _agent.updateRotation = false;
-        StopAndSnapAgent();
-        SetIdle();
-        
+        _agent.ResetPath();
     }
 
     private void EnterDeath()
     {
-        _agent.updateRotation = false;
         StopAndSnapAgent();
-        SetIdle();
+
+        if (_agent != null && _agent.enabled)
+        {
+            _agent.enabled = false;
+        }
     }
-    
 
     private void StopAndSnapAgent()
     {
-        if (_agent == null) return;
+        if (_agent == null || !_agent.enabled || !_agent.isOnNavMesh) return;
 
         _agent.isStopped = true;
         _agent.ResetPath();
-        
         _agent.nextPosition = transform.position;
     }
-    
+
     private int GetClosestPatrolIndex()
     {
         int best = 0;
@@ -297,6 +390,7 @@ public class NPCControllerAI : MonoBehaviour
     {
         if (patrolPoints == null || patrolPoints.Length == 0) return;
         if (patrolPoints[_patrolIndex] == null) return;
+        if (_agent == null || !_agent.enabled || !_agent.isOnNavMesh) return;
 
         _patrolIndex = Mathf.Clamp(_patrolIndex, 0, patrolPoints.Length - 1);
         _agent.SetDestination(patrolPoints[_patrolIndex].position);
@@ -315,7 +409,6 @@ public class NPCControllerAI : MonoBehaviour
 
         GoToPatrolPoint();
     }
-    
 
     private void FaceTarget(Vector3 targetPos)
     {
@@ -331,20 +424,5 @@ public class NPCControllerAI : MonoBehaviour
     private void OnDeath()
     {
         ChangeState(State.Death);
-    }
-
-    private void SetIdle()
-    {
-        if (_animator != null) _animator.SetFloat("MoveSpeed", 0f);
-    }
-
-    private void SetWalk()
-    {
-        if (_animator != null) _animator.SetFloat("MoveSpeed", 0.5f);
-    }
-
-    private void SetRun()
-    {
-        if (_animator != null) _animator.SetFloat("MoveSpeed", 1f);
     }
 }
